@@ -1,0 +1,43 @@
+# d0wnDetect0r – Traefik routing configuration
+# Deploy to: /opt/infra/traefik/dynamic/d0wndetect0r.yml on VPS
+
+http:
+  middlewares:
+    d0wndetect0r-https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  routers:
+    d0wndetect0r-http:
+      rule: "Host(`d0wndetect0r.indisium.no`)"
+      entryPoints: ["web"]
+      middlewares: ["d0wndetect0r-https-redirect"]
+      service: noop@internal
+
+    d0wndetect0r-web:
+      rule: "Host(`d0wndetect0r.indisium.no`)"
+      entryPoints: ["websecure"]
+      tls:
+        certResolver: le
+      service: d0wndetect0r-web
+      priority: 10
+
+    d0wndetect0r-api:
+      rule: "Host(`d0wndetect0r.indisium.no`) && PathPrefix(`/api`)"
+      entryPoints: ["websecure"]
+      tls:
+        certResolver: le
+      service: d0wndetect0r-api
+      priority: 20
+
+  services:
+    d0wndetect0r-web:
+      loadBalancer:
+        servers:
+          - url: "http://d0wndetect0r-frontend:80"
+
+    d0wndetect0r-api:
+      loadBalancer:
+        servers:
+          - url: "http://d0wndetect0r-backend:5000"
